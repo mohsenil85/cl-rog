@@ -1,3 +1,9 @@
+;;;todo
+;;;monsters
+;;;draw terrain
+;;;impl pause
+;;;impl harvest from plants
+
 (in-package :cl-user)
 (ql:quickload "cl-charms")
 (defpackage term
@@ -86,8 +92,7 @@
     (setf x (mod x width)
           y (mod y height)
           (player-x *player*) x
-          (player-y *player*) y)
-    )))
+          (player-y *player*) y))))
 
 (defun update-world ()
   (progn
