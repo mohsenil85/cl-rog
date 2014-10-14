@@ -69,9 +69,7 @@
     (draw-plants)
     (paint #\@)
     (refresh-window *standard-window*)
-    (sleep .1)
-    ;(sleep 1)
-    ))
+    (sleep .1)))
 
 (defun main ()
   (with-curses  ()
