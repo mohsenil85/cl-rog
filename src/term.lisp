@@ -37,6 +37,13 @@
      (push (make-plant :x x :y y :age 0) *plants*)))
 
 
+(defmacro draw-plant* (p char)
+  `(with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window*
+                         ,char
+                         (plant-x ,p)
+                         (plant-y ,p))))
+
 (defun draw-plant (p)
   (let ((age (plant-age p)))
     (case age
@@ -46,13 +53,6 @@
       ((2) (draw-plant* p #\%))
       (otherwise (draw-plant* p #\Space)))))
 
-
-(defmacro draw-plant* (p char)
-  `(with-restored-cursor *standard-window*
-    (write-char-at-point *standard-window*
-                         ,char
-                         (plant-x ,p)
-                         (plant-y ,p))))
 
 
 (defun age-plants ()
@@ -70,15 +70,17 @@
          (draw-plant p)))
 
 (defun get-input ()
-  (let ((c (get-char *standard-window* :ignore-error t) )) 
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+    (let ((c (get-char *standard-window* :ignore-error t) )) 
     (case c
       ((nil) nil)
-      ((#\k) (decf (player-y *player*  )))
-      ((#\j) (incf (player-y *player*  )))
-      ((#\h) (decf (player-x *player*  )))
-      ((#\l) (incf (player-x *player*  )))
+      ((#\k) (decf (player-y *player*)))
+      ((#\j) (incf (player-y *player*)))
+      ((#\h) (decf (player-x *player*)))
+      ((#\l) (incf (player-x *player*)))
       ((#\Space) (plant))
-      ((#\q) (quit)))))
+      ((#\q) (quit))))))
 
 (defun update-world ()
   (progn
@@ -107,4 +109,4 @@
           (get-input)
           (update-world))))
 
-;(main)
+(main)
