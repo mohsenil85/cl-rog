@@ -36,8 +36,7 @@
 (defun plant ()
   (multiple-value-bind (x y)
     (charms:cursor-position *standard-window*)
-    (let ((p (make-plant :x x :y y :age *world-age* )))
-     (push p *plants*))) )
+     (push (make-plant :x x :y y :age *world-age*) *plants*)) )
 
 (defun draw-plants ()
   (loop :for p 
@@ -56,21 +55,24 @@
       ((#\j) (incf (player-y *player*  )))
       ((#\h) (decf (player-x *player*  )))
       ((#\l) (incf (player-x *player*  )))
-      ((#\Space (plant)))
+      ((#\Space) (plant))
       ((#\q) (quit)))))
 
 (defun update-world ()
   (progn
     (incf *world-age*  )
+    (if (char-equal #\@ 
+                    (char-at-cursor *standard-window* )) 
+      (paint #\Space))
     (move-cursor *standard-window* 
                  (player-x *player*) 
                  (player-y *player*))
     (paint #\@)
     (draw-plants)
     (refresh-window *standard-window*)
-    ;(sleep .1)
-    (sleep 1)
-    (paint #\Space)))
+    (sleep .1)
+    ;(sleep 1)
+    ))
 
 (defun main ()
   (with-curses  ()
