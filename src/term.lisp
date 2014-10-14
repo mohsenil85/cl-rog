@@ -41,38 +41,18 @@
   (let ((age (plant-age p)))
     (case age
       ((nil) nil)
-      ((0) (draw-plant-0 p))
-      ((1) (draw-plant-1 p))
-      ((2) (draw-plant-2 p))
-      (otherwise (kill-plant p)))))
+      ((0) (draw-plant* p #\*))
+      ((1) (draw-plant* p #\0))
+      ((2) (draw-plant* p #\%))
+      (otherwise (draw-plant* p #\Space)))))
 
-(defun kill-plant (p)
-  (with-restored-cursor *standard-window*
-    (write-char-at-point *standard-window*
-                         #\Space
-                         (plant-x p)
-                         (plant-y p))))
 
-(defun draw-plant-2 (p)
-  (with-restored-cursor *standard-window*
+(defmacro draw-plant* (p char)
+  `(with-restored-cursor *standard-window*
     (write-char-at-point *standard-window*
-                         #\%
-                         (plant-x p)
-                         (plant-y p))))
-
-(defun draw-plant-1 (p)
-  (with-restored-cursor *standard-window*
-    (write-char-at-point *standard-window*
-                         #\0
-                         (plant-x p)
-                         (plant-y p))))
-
-(defun draw-plant-0 (p)
-  (with-restored-cursor *standard-window*
-    (write-char-at-point *standard-window*
-                         #\*
-                         (plant-x p)
-                         (plant-y p))))
+                         ,char
+                         (plant-x ,p)
+                         (plant-y ,p))))
 
 
 (defun age-plants ()
@@ -127,4 +107,4 @@
           (get-input)
           (update-world))))
 
-(main)
+;(main)
