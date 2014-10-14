@@ -64,13 +64,19 @@
       (otherwise (draw-plant* p #\Space)))))
 
 
+(defun plant-too-old (p)
+  (< 3 (plant-age p)))
+
+(defun cull-plants ()
+  (setf *plants* (delete-if #'plant-too-old *plants*)))
 
 (defun age-plants ()
   (if (eql (mod *world-age* 100 ) 0)
     (loop :for p 
           :in *plants*
           :do
-          (incf (plant-age p)))))
+              (cull-plants)
+              (incf (plant-age p)))))
 
 (defun draw-map ()
   (multiple-value-bind (width height)
@@ -125,7 +131,7 @@
     (age-plants)
     (paint #\@)
     (refresh-window *standard-window*)
-    (sleep .1)))
+    (sleep .01)))
 
 (defun main ()
   (with-curses  ()
