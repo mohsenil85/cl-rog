@@ -32,6 +32,10 @@
   (with-restored-cursor *standard-window*
     (write-char-at-cursor *standard-window* ch)))
 
+(defun paint-at-point (ch x y)
+  (with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window* ch x y)) )
+
 (defun quit ()
   (progn
     (setf *running* nil)
@@ -68,9 +72,19 @@
           :do
           (incf (plant-age p)))))
 
+(defun draw-map ()
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+    (loop :for i 
+          :from 0 
+          :to (- width 1)
+          :do (loop :for j 
+                    :from 0 
+                    :to (- height 2 )
+                    :do (paint-at-point #\. i j )))))
 
 (defun draw-plants ()
-  (loop :for p 
+    (loop :for p 
         :in *plants*
         :do
          (draw-plant p)))
@@ -103,6 +117,7 @@
     (move-cursor *standard-window* 
                  (player-x *player*) 
                  (player-y *player*))
+    (draw-map)
     (with-restored-cursor *standard-window*
       (write-string-at-point *standard-window* 
                              (write-to-string *world-age*) 0 0))
