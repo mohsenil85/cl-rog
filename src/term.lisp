@@ -8,10 +8,12 @@
 
 
 (defstruct player x y hp)
+(defstruct plant x y age)
 
 (defparameter *player* (make-player  :x 20 :y 20 :hp 20))
 (defparameter *running* t)
 (defparameter *world-age* 0)
+(defparameter *plants* '() )
 
 (defun move (player dir)
   (format t "~A~A~%" player dir))
@@ -31,6 +33,21 @@
     (setf *running* nil)
     (sb-sys:os-exit 0)))
 
+(defun plant ()
+  (multiple-value-bind (x y)
+    (charms:cursor-position *standard-window*)
+    (let ((p (make-plant :x x :y y :age *world-age* )))
+     (push p *plants*))) )
+
+(defun draw-plants ()
+  (loop :for p 
+        :in *plants*
+        :do
+        (charms:write-char-at-point *standard-window* 
+                                    #\* 
+                                    (plant-x p) 
+                                    (plant-y p))))
+
 (defun get-input ()
   (let ((c (get-char *standard-window* :ignore-error t) )) 
     (case c
@@ -39,18 +56,20 @@
       ((#\j) (incf (player-y *player*  )))
       ((#\h) (decf (player-x *player*  )))
       ((#\l) (incf (player-x *player*  )))
+      ((#\Space (plant)))
       ((#\q) (quit)))))
 
 (defun update-world ()
   (progn
-
     (incf *world-age*  )
     (move-cursor *standard-window* 
                  (player-x *player*) 
                  (player-y *player*))
     (paint #\@)
+    (draw-plants)
     (refresh-window *standard-window*)
-    (sleep .1)
+    ;(sleep .1)
+    (sleep 1)
     (paint #\Space)))
 
 (defun main ()
@@ -59,9 +78,7 @@
     (loop :named main-loop
           :while *running*
           :do 
-
           (get-input)
-          (update-world)
-          )))
+          (update-world))))
 
 (main)
