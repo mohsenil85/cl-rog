@@ -72,15 +72,22 @@
 (defun get-input ()
   (multiple-value-bind (width height)
     (window-dimensions *standard-window*)
-    (let ((c (get-char *standard-window* :ignore-error t) )) 
+    (let ((c (get-char *standard-window* :ignore-error t) )
+          (x (player-x *player*))
+          (y (player-y *player*))) 
     (case c
       ((nil) nil)
-      ((#\k) (decf (player-y *player*)))
-      ((#\j) (incf (player-y *player*)))
-      ((#\h) (decf (player-x *player*)))
-      ((#\l) (incf (player-x *player*)))
+      ((#\k) (decf y))
+      ((#\j) (incf y))
+      ((#\h) (decf x))
+      ((#\l) (incf x))
       ((#\Space) (plant))
-      ((#\q) (quit))))))
+      ((#\q) (quit)))
+    (setf x (mod x width)
+          y (mod y height)
+          (player-x *player*) x
+          (player-y *player*) y)
+    )))
 
 (defun update-world ()
   (progn
