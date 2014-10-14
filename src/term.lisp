@@ -15,8 +15,6 @@
 (defparameter *world-age* 0)
 (defparameter *plants* '() )
 
-(defun move (player dir)
-  (format t "~A~A~%" player dir))
 
 (defun init ()
   (disable-echoing)
@@ -36,16 +34,17 @@
 (defun plant ()
   (multiple-value-bind (x y)
     (charms:cursor-position *standard-window*)
-     (push (make-plant :x x :y y :age *world-age*) *plants*)) )
+     (push (make-plant :x x :y y :age *world-age*) *plants*)))
 
 (defun draw-plants ()
   (loop :for p 
         :in *plants*
         :do
-        (charms:write-char-at-point *standard-window* 
-                                    #\* 
-                                    (plant-x p) 
-                                    (plant-y p))))
+        (with-restored-cursor *standard-window*
+          (charms:write-char-at-point *standard-window* 
+                                      #\* 
+                                      (plant-x p) 
+                                      (plant-y p)))))
 
 (defun get-input ()
   (let ((c (get-char *standard-window* :ignore-error t) )) 
@@ -67,8 +66,8 @@
     (move-cursor *standard-window* 
                  (player-x *player*) 
                  (player-y *player*))
-    (paint #\@)
     (draw-plants)
+    (paint #\@)
     (refresh-window *standard-window*)
     (sleep .1)
     ;(sleep 1)
