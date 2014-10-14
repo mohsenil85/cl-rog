@@ -34,17 +34,60 @@
 (defun plant ()
   (multiple-value-bind (x y)
     (charms:cursor-position *standard-window*)
-     (push (make-plant :x x :y y :age *world-age*) *plants*)))
+     (push (make-plant :x x :y y :age 0) *plants*)))
+
+
+(defun draw-plant (p)
+  (let ((age (plant-age p)))
+    (case age
+      ((nil) nil)
+      ((0) (draw-plant-0 p))
+      ((1) (draw-plant-1 p))
+      ((2) (draw-plant-2 p))
+      (otherwise (kill-plant p)))))
+
+(defun kill-plant (p)
+  (with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window*
+                         #\Space
+                         (plant-x p)
+                         (plant-y p))))
+
+(defun draw-plant-2 (p)
+  (with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window*
+                         #\%
+                         (plant-x p)
+                         (plant-y p))))
+
+(defun draw-plant-1 (p)
+  (with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window*
+                         #\0
+                         (plant-x p)
+                         (plant-y p))))
+
+(defun draw-plant-0 (p)
+  (with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window*
+                         #\*
+                         (plant-x p)
+                         (plant-y p))))
+
+
+(defun age-plants ()
+  (if (eql (mod *world-age* 100 ) 0)
+    (loop :for p 
+          :in *plants*
+          :do
+          (incf (plant-age p)))))
+
 
 (defun draw-plants ()
   (loop :for p 
         :in *plants*
         :do
-        (with-restored-cursor *standard-window*
-          (charms:write-char-at-point *standard-window* 
-                                      #\* 
-                                      (plant-x p) 
-                                      (plant-y p)))))
+         (draw-plant p)))
 
 (defun get-input ()
   (let ((c (get-char *standard-window* :ignore-error t) )) 
@@ -66,7 +109,11 @@
     (move-cursor *standard-window* 
                  (player-x *player*) 
                  (player-y *player*))
+    (with-restored-cursor *standard-window*
+      (write-string-at-point *standard-window* 
+                             (write-to-string *world-age*) 0 0))
     (draw-plants)
+    (age-plants)
     (paint #\@)
     (refresh-window *standard-window*)
     (sleep .1)))
