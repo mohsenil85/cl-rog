@@ -23,6 +23,20 @@
 (defparameter blue 2)
 (defparameter green 3)
 
+(defmacro with-color (color &body body)
+  `(progn
+    (cl-charms/low-level:attron (cl-charms/low-level:color-pair ,color))  
+    ,@body
+  (cl-charms/low-level:attroff (cl-charms/low-level:color-pair ,color)))  )
+
+
+(defmacro draw-plant* (char p)
+  `(with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window*
+                         ,char
+                         (plant-x ,p)
+                         (plant-y ,p))))
+
 (defun init ()
   (disable-echoing)
   (cl-charms/low-level:curs-set 0)
@@ -61,49 +75,45 @@
      (push (make-plant :x x :y y :age 0) *plants*)))
 
 
-(defmacro draw-plant* (p char)
-  `(with-restored-cursor *standard-window*
-    (write-char-at-point *standard-window*
-                         ,char
-                         (plant-x ,p)
-                         (plant-y ,p))))
 
-(defun plant-1 (p)
+(defun plant-1 (ch p)
    (let ((x (plant-x p))
         (y (plant-y p)))
      (progn
-       (paint-at-point #\- (1- x) y))
-       (paint-at-point #\- (- x 2) y) 
-       (paint-at-point #\- (1+ x) y) 
-       (paint-at-point #\- (+ x 2) y) 
-       (paint-at-point #\|  x (1- y))
-       (paint-at-point #\|  x (1+ y))))
+       (paint-at-point ch (1- x) y)
+       (paint-at-point ch (- x 2) y) 
+       (paint-at-point ch (1+ x) y) 
+       (paint-at-point ch (+ x 2) y) 
+       (paint-at-point ch  x (1- y))
+       (paint-at-point ch  x (1+ y)))))
 
-(defun plant-2 (p)
+(defun plant-2 (ch p)
   (let ((x (plant-x p))
         (y (plant-y p)))
     (progn
-      (paint-at-point #\* (1- x) (- y 2))
-      (paint-at-point #\* (1+ x) (- y 2))
-      (paint-at-point #\* (1- x) (+ y 2))
-      (paint-at-point #\* (1+ x) (+ y 2))
+      (paint-at-point ch (1- x) (- y 2))
+      (paint-at-point ch (1+ x) (- y 2))
+      (paint-at-point ch (1- x) (+ y 2))
+      (paint-at-point ch (1+ x) (+ y 2))
 
-      (paint-at-point #\* (+ x 4) (1+ y))
-      (paint-at-point #\* (- x 4) (1+ y))
-      (paint-at-point #\* (+ x 4) (1- y))
-      (paint-at-point #\* (- x 4) (1- y))
+      (paint-at-point ch (+ x 4) (1+ y))
+      (paint-at-point ch (- x 4) (1+ y))
+      (paint-at-point ch (+ x 4) (1- y))
+      (paint-at-point ch (- x 4) (1- y))
 
-      (paint-at-point #\* (- x 5)  y)
-      (paint-at-point #\* (+ x 5)  y))))
+      (paint-at-point ch (- x 5)  y)
+      (paint-at-point ch (+ x 5)  y))))
 
 (defun draw-plant (p)
-  (let ((age (plant-age p)))
+  (with-color green (let ((age (plant-age p)))
     (case age
       ((nil) nil)
-      ((0) (draw-plant* p #\*))
-      ((1) (plant-1 p))
-      ((2) (plant-2 p))
-      (otherwise (draw-plant* p #\Space)))))
+      ((0) (draw-plant* #\* p))
+      ((1) (draw-plant* #\Space p)
+           (plant-1 #\- p))
+      ((2) (plant-1 #\Space p) 
+           (plant-2 #\* p))
+      (otherwise (plant-2  #\Space p))))))
 
 
 
@@ -148,11 +158,6 @@
         :do
          (draw-plant p))))
 
-(defmacro with-color (color &body body)
-  `(progn
-    (cl-charms/low-level:attron (cl-charms/low-level:color-pair ,color))  
-    ,@body
-  (cl-charms/low-level:attroff (cl-charms/low-level:color-pair ,color)))  )
 
 (defun draw-player ()
   (paint #\Space)
