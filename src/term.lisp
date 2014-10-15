@@ -6,12 +6,11 @@
 
 (in-package :cl-user)
 (ql:quickload "cl-charms")
+(ql:quickload "black-tie")
 (defpackage term
   (:use :cl
         :cl-charms))
 (in-package :term)
-
-
 
 (defstruct player x y hp)
 (defstruct plant x y age)
@@ -71,12 +70,19 @@
   (setf *plants* (delete-if #'plant-too-old *plants*)))
 
 (defun age-plants ()
-  (if (eql (mod *world-age* 100 ) 0)
+  (if (eql (mod *world-age* 600 ) 0)
     (loop :for p 
           :in *plants*
           :do
               (cull-plants)
               (incf (plant-age p)))))
+
+(defun rand-char ()
+  (let ((num (random 1000))) 
+    (cond
+    ((evenp num ) #\- )
+    (t #\=))))
+
 
 (defun draw-map ()
   (multiple-value-bind (width height)
@@ -87,13 +93,14 @@
           :do (loop :for j 
                     :from 0 
                     :to (- height 2 )
-                    :do (paint-at-point #\. i j )))))
+                    :do (paint-at-point (rand-char) i j )))))
 
 (defun draw-plants ()
     (loop :for p 
         :in *plants*
         :do
          (draw-plant p)))
+
 
 (defun get-input ()
   (multiple-value-bind (width height)
@@ -123,7 +130,8 @@
     (move-cursor *standard-window* 
                  (player-x *player*) 
                  (player-y *player*))
-    (draw-map)
+    (if (eq 0 (mod *world-age* 61)) 
+      (draw-map))
     (with-restored-cursor *standard-window*
       (write-string-at-point *standard-window* 
                              (write-to-string *world-age*) 0 0))
@@ -137,7 +145,6 @@
   (with-curses  ()
     (init)
     (loop :named main-loop
-          :while *running*
           :do 
           (get-input)
           (update-world))))
