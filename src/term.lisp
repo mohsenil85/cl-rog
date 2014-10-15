@@ -36,6 +36,10 @@
   (with-restored-cursor *standard-window*
     (write-char-at-point *standard-window* ch x y)) )
 
+(defun string-point (str x y)
+  (with-restored-cursor *standard-window*
+     (write-string-at-point *standard-window* str x y)))
+
 (defun quit ()
   (progn
     (setf *running* nil)
@@ -54,6 +58,18 @@
                          (plant-x ,p)
                          (plant-y ,p))))
 
+(defun plant-3 (p)
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+   (let ((x (mod (plant-x p) width))
+        (y (mod (plant-y p) height)))
+     (progn
+       (paint-at-point #\- (1- x) y))
+       (paint-at-point #\- (1+ x) y) 
+       (paint-at-point #\|  x (1- y)) 
+       (paint-at-point #\|  x (1+ y)) 
+     )))
+
 (defun draw-plant (p)
   (let ((age (plant-age p)))
     (case age
@@ -61,23 +77,13 @@
       ((0) (draw-plant* p #\*))
       ((1) (draw-plant* p #\0))
       ((2) (draw-plant* p #\%))
-      ((3) (special-plant p))
+      ((3) (plant-3 p))
       (otherwise (draw-plant* p #\Space)))))
 
-(defmacro string-point (str x y)
-  `(with-restored-cursor *standard-window*
-     (write-string-at-point *standard-window* ,str ,x ,y)))
-
-(defun special-plant (p)
-  (let ((x (plant-x p))
-        (y (plant-y p))
-        (str (format nil "-~%-~%-~%-~%-~%")))
-    (string-point str x y)) 
-  )
 
 
 (defun plant-too-old (p)
-  (< 7 (plant-age p)))
+  (< 5 (plant-age p)))
 
 (defun cull-plants ()
   (setf *plants* (delete-if #'plant-too-old *plants*)))
@@ -152,7 +158,6 @@
 (defun update-world ()
   (progn
     (incf *world-age*  )
-    ; holding off mapping for now
    ; (if (eq 0 (mod *world-age* 61)) 
    ;   (draw-map))
     (draw-hud)
