@@ -6,7 +6,6 @@
 
 (in-package :cl-user)
 (ql:quickload "cl-charms")
-(ql:quickload "black-tie")
 (defpackage term
   (:use :cl
         :cl-charms))
@@ -25,7 +24,9 @@
   (disable-echoing)
   (cl-charms/low-level:curs-set 0)
   (enable-raw-input :interpret-control-characters t)
-  (enable-non-blocking-mode *standard-window*))
+  (enable-non-blocking-mode *standard-window*)
+  (cl-charms/low-level:start-color)
+  )
 
 (defun paint (ch)
   (with-restored-cursor *standard-window*
@@ -60,17 +61,30 @@
       ((0) (draw-plant* p #\*))
       ((1) (draw-plant* p #\0))
       ((2) (draw-plant* p #\%))
+      ((3) (special-plant p))
       (otherwise (draw-plant* p #\Space)))))
+
+(defmacro string-point (str x y)
+  `(with-restored-cursor *standard-window*
+     (write-string-at-point *standard-window* ,str ,x ,y)))
+
+(defun special-plant (p)
+  (let ((x (plant-x p))
+        (y (plant-y p))
+        (str (format nil "-~%-~%-~%-~%-~%")))
+    (string-point str x y)) 
+  )
 
 
 (defun plant-too-old (p)
-  (< 3 (plant-age p)))
+  (< 7 (plant-age p)))
 
 (defun cull-plants ()
   (setf *plants* (delete-if #'plant-too-old *plants*)))
 
 (defun age-plants ()
-  (if (eql (mod *world-age* 600 ) 0)
+  ;; should be 600ish
+  (if (eql (mod *world-age* 60 ) 0)
     (loop :for p 
           :in *plants*
           :do
@@ -80,8 +94,8 @@
 (defun rand-char ()
   (let ((num (random 1000))) 
     (cond
-    ((evenp num ) #\- )
-    (t #\=))))
+    ((evenp num ) #\, )
+    (t #\.))))
 
 
 (defun draw-map ()
@@ -96,11 +110,25 @@
                     :do (paint-at-point (rand-char) i j )))))
 
 (defun draw-plants ()
-    (loop :for p 
+    (progn
+      (age-plants)
+      (loop :for p 
         :in *plants*
         :do
-         (draw-plant p)))
+         (draw-plant p))))
 
+
+(defun draw-player ()
+    (if (char-equal #\@ 
+                    (char-at-cursor *standard-window* )) 
+      (paint #\Space))
+    (move-cursor *standard-window* 
+                 (player-x *player*) 
+                 (player-y *player*))
+    (paint #\@))
+
+(defun draw-hud ()
+  (string-point (write-to-string *world-age*) 0 0 ))
 
 (defun get-input ()
   (multiple-value-bind (width height)
@@ -124,20 +152,12 @@
 (defun update-world ()
   (progn
     (incf *world-age*  )
-    (if (char-equal #\@ 
-                    (char-at-cursor *standard-window* )) 
-      (paint #\Space))
-    (move-cursor *standard-window* 
-                 (player-x *player*) 
-                 (player-y *player*))
-    (if (eq 0 (mod *world-age* 61)) 
-      (draw-map))
-    (with-restored-cursor *standard-window*
-      (write-string-at-point *standard-window* 
-                             (write-to-string *world-age*) 0 0))
+    ; holding off mapping for now
+   ; (if (eq 0 (mod *world-age* 61)) 
+   ;   (draw-map))
+    (draw-hud)
     (draw-plants)
-    (age-plants)
-    (paint #\@)
+    (draw-player)
     (refresh-window *standard-window*)
     (sleep .01)))
 
@@ -146,7 +166,10 @@
     (init)
     (loop :named main-loop
           :do 
+          (update-world)
           (get-input)
-          (update-world))))
+          
+          )))
 
 (main)
+
