@@ -33,8 +33,12 @@
     (write-char-at-cursor *standard-window* ch)))
 
 (defun paint-at-point (ch x y)
-  (with-restored-cursor *standard-window*
-    (write-char-at-point *standard-window* ch x y)) )
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+    (with-restored-cursor *standard-window*
+    (write-char-at-point *standard-window* ch 
+                         (mod x width) 
+                         (mod y height)))) )
 
 (defun string-point (str x y)
   (with-restored-cursor *standard-window*
@@ -58,26 +62,41 @@
                          (plant-x ,p)
                          (plant-y ,p))))
 
-(defun plant-3 (p)
-  (multiple-value-bind (width height)
-    (window-dimensions *standard-window*)
-   (let ((x (mod (plant-x p) width))
-        (y (mod (plant-y p) height)))
+(defun plant-1 (p)
+   (let ((x (plant-x p))
+        (y (plant-y p)))
      (progn
        (paint-at-point #\- (1- x) y))
+       (paint-at-point #\- (- x 2) y) 
        (paint-at-point #\- (1+ x) y) 
-       (paint-at-point #\|  x (1- y)) 
-       (paint-at-point #\|  x (1+ y)) 
-     )))
+       (paint-at-point #\- (+ x 2) y) 
+       (paint-at-point #\|  x (1- y))
+       (paint-at-point #\|  x (1+ y))))
+
+(defun plant-2 (p)
+  (let ((x (plant-x p))
+        (y (plant-y p)))
+    (progn
+      (paint-at-point #\* (1- x) (- y 2))
+      (paint-at-point #\* (1+ x) (- y 2))
+      (paint-at-point #\* (1- x) (+ y 2))
+      (paint-at-point #\* (1+ x) (+ y 2))
+
+      (paint-at-point #\* (+ x 4) (1+ y))
+      (paint-at-point #\* (- x 4) (1+ y))
+      (paint-at-point #\* (+ x 4) (1- y))
+      (paint-at-point #\* (- x 4) (1- y))
+
+      (paint-at-point #\* (- x 5)  y)
+      (paint-at-point #\* (+ x 5)  y))))
 
 (defun draw-plant (p)
   (let ((age (plant-age p)))
     (case age
       ((nil) nil)
       ((0) (draw-plant* p #\*))
-      ((1) (draw-plant* p #\0))
-      ((2) (draw-plant* p #\%))
-      ((3) (plant-3 p))
+      ((1) (plant-1 p))
+      ((2) (plant-2 p))
       (otherwise (draw-plant* p #\Space)))))
 
 
@@ -90,7 +109,7 @@
 
 (defun age-plants ()
   ;; should be 600ish
-  (if (eql (mod *world-age* 60 ) 0)
+  (if (eql (mod *world-age* 600 ) 0)
     (loop :for p 
           :in *plants*
           :do
@@ -158,8 +177,8 @@
 (defun update-world ()
   (progn
     (incf *world-age*  )
-   ; (if (eq 0 (mod *world-age* 61)) 
-   ;   (draw-map))
+    (if (eq 0 (mod *world-age* 61)) 
+      (draw-map))
     (draw-hud)
     (draw-plants)
     (draw-player)
