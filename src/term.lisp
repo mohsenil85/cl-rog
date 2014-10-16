@@ -72,6 +72,7 @@
 (defun quit ()
   (progn
     (setf *running* nil)
+    (cl-charms/low-level:curs-set 2)
     (sb-sys:os-exit 0)))
 
 (defun create-monster  ()
@@ -98,14 +99,20 @@
              
 
 (defun monster-standing-on-plant (m)
-  (let ((msg (charms:char-at-point  *standard-window* 
-                                    (monster-x m) 
-                                    (monster-y m))))
-   (case msg
-     ((nil) nil)
-     (otherwise t)
-     ) 
-    ))
+  ;;810 is a green askterisk.
+  ;;621 is a blue period
+  (let ((i  
+        (cl-charms/low-level:mvinch
+                                            (monster-x m)
+                                            (monster-y m)
+                                            
+                                            )))
+    (case i
+      ((-1) (setf msg "one"))
+      (otherwise (setf msg (format t "~A ~A " (monster-x (car *monsters*)) (monster-y (car *monsters*)) )))
+      )
+  
+  ))
 
 (defun cull-monsters ()
         (loop :for m
@@ -113,11 +120,6 @@
               :do
               (setf *monsters* (delete-if #'monster-standing-on-plant *monsters*))) )
 
-
-(defmacro with-dimensions (&body body)
-  (multiple-value-bind (width height)
-    (window-dimensions *standard-window*)
-    `(,@body)))
 
 (defun update-monsters ()
   (if (and (> 4 (length *monsters*))
@@ -171,7 +173,8 @@
       (paint-at-point ch (+ x 5)  y))))
 
 (defun draw-plant (p)
-  ((let ((age (plant-age p)))
+  (with-color green
+    (let ((age (plant-age p)))
     (case age
       ((nil) nil)
       ((0) (draw-plant* #\* p))
@@ -217,12 +220,11 @@
                     :do (with-color blue (paint-at-point #\. i j ))))))
 
 (defun draw-plants ()
-    (progn
-      (age-plants)
-      (loop :for p 
+  (age-plants)
+  (loop :for p 
         :in *plants*
         :do
-         (draw-plant p))))
+        (draw-plant p)))
 
 
 (defun draw-player ()
@@ -233,15 +235,16 @@
   (with-color red (paint #\@)))
 
 (defun draw-hud ()
-  (progn
-    (string-point (format nil "Time: ~d X: ~A Y: ~A Plants Left: ~A Monsters: ~A Debug: ~A "
+  (with-color green
+    (progn
+    (string-point (format nil "* Time: ~d X: ~A Y: ~A Plants Left: ~A Monsters: ~A Debug: ~A "
                           *world-age*
                           (player-x *player*)
                           (player-y *player*)
                           (- 11 (length *plants*))
                           (length *monsters*)
                           msg
-                          ) 0 0 )))
+                          ) 0 0 ))))
 
 (defun get-input ()
   (multiple-value-bind (width height)
@@ -255,6 +258,7 @@
       ((#\j) (incf y))
       ((#\h) (decf x))
       ((#\l) (incf x))
+      ;((#\t) (monster-standing-on-plant ))
       ((#\Space) (unless (< 10 (length *plants*)) (plant)))
       ((#\q) (quit)))
     (setf x (mod x (1- width) )
@@ -265,23 +269,28 @@
 (defun update-world ()
   (progn
     (incf *world-age*  )
-    (if (eq 0 (mod *world-age* 61)) 
-      (draw-map))
+    ;(if (eq 0 (mod *world-age* 61)) 
+    ;  (draw-map))
     (draw-hud)
-    (draw-plants)
-    (cull-monsters ) 
     (draw-monsters)
+    (draw-plants)
+    ;(cull-monsters ) 
     (draw-player)
+    (if (> 0 (length *monsters*)) (setf msg *monsters*))
     (refresh-window *standard-window*)
     (sleep .01)))
 
 (defun main ()
   (with-curses  ()
-    (init)
-    (loop :named main-loop
-          :do 
-          (update-world)
-          (get-input))))
+    (unwind-protect
+      (init)
+      (loop :named main-loop
+            :do 
+            (get-input)
+            (update-world)
+          
+          )
+      (quit)) ))
 
 (main)
 
