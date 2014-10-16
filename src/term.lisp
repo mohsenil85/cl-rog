@@ -59,8 +59,8 @@
     (window-dimensions *standard-window*)
     (with-restored-cursor *standard-window*
     (write-char-at-point *standard-window* ch 
-                         (mod x width) 
-                         (mod y height)))) )
+                         (mod x (1- width)) 
+                         (mod y (1- height))))) )
 
 (defun string-point (str x y)
   (with-restored-cursor *standard-window*
@@ -74,8 +74,8 @@
 (defun create-monster  ()
  (multiple-value-bind (width height)
    (window-dimensions *standard-window*)
-   (let ((x (random width))
-         (y (random height)))
+   (let ((x (random (1- width)))
+         (y (random (1- height))))
      (push (make-monster  :x x :y y :age 0) *monsters*))))
 
 (defun draw-monsters ()
@@ -105,10 +105,10 @@
     (window-dimensions *standard-window*)
    (let ((i (random 3)))
     (case i
-      ((0) (1- (mod (incf (monster-x m)) width)))
-      ((1) (1- (mod (decf (monster-x m)) width)))
-      ((2) (1- (mod (incf (monster-y m)) height)))
-      ((3) (1- (mod (decf (monster-y m)) height)))
+      ((0)  (mod (incf (monster-x m)) (1- width)))
+      ((1)  (mod (decf (monster-x m)) (1- width)))
+      ((2)  (mod (incf (monster-y m)) (1- height)))
+      ((3)  (mod (decf (monster-y m)) (1- height)))
       ))))
 
 (defun plant ()
@@ -209,7 +209,12 @@
   (with-color red (paint #\@)))
 
 (defun draw-hud ()
-  (string-point (write-to-string *world-age*) 0 0 ))
+  (progn
+    (string-point (format nil "Time: ~d X: ~A Y: ~A"
+                          *world-age*
+                          (player-x *player*)
+                          (player-y *player*)
+                          ) 0 0 )))
 
 (defun get-input ()
   (multiple-value-bind (width height)
@@ -225,16 +230,16 @@
       ((#\l) (incf x))
       ((#\Space) (plant))
       ((#\q) (quit)))
-    (setf x (mod x width)
-          y (mod y height)
+    (setf x (mod x (1- width) )
+          y (mod y (1- height))
           (player-x *player*) x
           (player-y *player*) y))))
 
 (defun update-world ()
   (progn
     (incf *world-age*  )
-    ;(if (eq 0 (mod *world-age* 61)) 
-    ;  (draw-map))
+    (if (eq 0 (mod *world-age* 61)) 
+      (draw-map))
     (draw-hud)
     (draw-plants)
     (draw-monsters)
@@ -248,9 +253,7 @@
     (loop :named main-loop
           :do 
           (update-world)
-          (get-input)
-          
-          )))
+          (get-input))))
 
 (main)
 
