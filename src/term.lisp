@@ -20,10 +20,12 @@
 (defparameter *world-age* 0)
 (defparameter *plants* '() )
 (defparameter *monsters* '() )
+(defparameter msg "this is the message" )
 
 (defparameter red 1)
 (defparameter blue 2)
 (defparameter green 3)
+(defparameter cyan 4)
 
 (defmacro with-color (color &body body)
   `(progn
@@ -48,6 +50,7 @@
   (cl-charms/low-level:init-pair red cl-charms/low-level:color_red charms/ll:color_black )
   (cl-charms/low-level:init-pair blue cl-charms/low-level:color_blue charms/ll:color_black )
   (cl-charms/low-level:init-pair green cl-charms/low-level:color_green charms/ll:color_black )
+  (cl-charms/low-level:init-pair cyan cl-charms/low-level:color_magenta charms/ll:color_black )
   )
 
 (defun paint (ch)
@@ -91,13 +94,34 @@
                                  (monster-x m)
                                  (monster-y m))))))
 
+
+             
+
+(defun monster-standing-on-plant (m)
+  (let ((msg (charms:char-at-point  *standard-window* 
+                                    (monster-x m) 
+                                    (monster-y m))))
+   (case msg
+     ((nil) nil)
+     (otherwise t)
+     ) 
+    ))
+
+(defun cull-monsters ()
+        (loop :for m
+              :in *monsters*
+              :do
+              (setf *monsters* (delete-if #'monster-standing-on-plant *monsters*))) )
+
+
 (defmacro with-dimensions (&body body)
   (multiple-value-bind (width height)
     (window-dimensions *standard-window*)
     `(,@body)))
 
 (defun update-monsters ()
-  (if (eq (random 100) 3)
+  (if (and (> 4 (length *monsters*))
+       (eq (random 100) 3))
     (create-monster)))
 
 (defun move-monster (m)
@@ -147,7 +171,7 @@
       (paint-at-point ch (+ x 5)  y))))
 
 (defun draw-plant (p)
-  (with-color green (let ((age (plant-age p)))
+  ((let ((age (plant-age p)))
     (case age
       ((nil) nil)
       ((0) (draw-plant* #\* p))
@@ -167,7 +191,7 @@
 
 (defun age-plants ()
   ;; should be 600ish
-  (if (eql (mod *world-age* 600 ) 0)
+  (if (eql (mod *world-age* 60 ) 0)
     (loop :for p 
           :in *plants*
           :do
@@ -190,7 +214,7 @@
           :do (loop :for j 
                     :from 0 
                     :to (- height 2 )
-                    :do (paint-at-point (rand-char) i j )))))
+                    :do (with-color blue (paint-at-point #\. i j ))))))
 
 (defun draw-plants ()
     (progn
@@ -210,10 +234,13 @@
 
 (defun draw-hud ()
   (progn
-    (string-point (format nil "Time: ~d X: ~A Y: ~A"
+    (string-point (format nil "Time: ~d X: ~A Y: ~A Plants Left: ~A Monsters: ~A Debug: ~A "
                           *world-age*
                           (player-x *player*)
                           (player-y *player*)
+                          (- 11 (length *plants*))
+                          (length *monsters*)
+                          msg
                           ) 0 0 )))
 
 (defun get-input ()
@@ -228,7 +255,7 @@
       ((#\j) (incf y))
       ((#\h) (decf x))
       ((#\l) (incf x))
-      ((#\Space) (plant))
+      ((#\Space) (unless (< 10 (length *plants*)) (plant)))
       ((#\q) (quit)))
     (setf x (mod x (1- width) )
           y (mod y (1- height))
@@ -242,6 +269,7 @@
       (draw-map))
     (draw-hud)
     (draw-plants)
+    (cull-monsters ) 
     (draw-monsters)
     (draw-player)
     (refresh-window *standard-window*)
