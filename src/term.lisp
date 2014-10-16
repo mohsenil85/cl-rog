@@ -13,11 +13,13 @@
 
 (defstruct player x y hp)
 (defstruct plant x y age)
+(defstruct monster x y age)
 
 (defparameter *player* (make-player  :x 20 :y 20 :hp 20))
 (defparameter *running* t)
 (defparameter *world-age* 0)
 (defparameter *plants* '() )
+(defparameter *monsters* '() )
 
 (defparameter red 1)
 (defparameter blue 2)
@@ -68,6 +70,32 @@
   (progn
     (setf *running* nil)
     (sb-sys:os-exit 0)))
+
+(defun create-monster  ()
+ (multiple-value-bind (width height)
+   (window-dimensions *standard-window*)
+   (let ((x (random width))
+         (y (random height)))
+     (push (make-monster  :x x :y y :age 0) *monsters*))))
+
+(defun draw-monsters ()
+  (progn
+    (update-monsters)
+    (loop :for m
+        :in *monsters*
+        :do
+        (with-color blue 
+                    (paint-at-point #\m 
+                                 (monster-x m)
+                                 (monster-y m))))))
+
+(defun update-monsters ()
+  (if (eq (random 100) 3)
+    (create-monster)))
+
+(defun move-monster ()
+  
+  )
 
 (defun plant ()
   (multiple-value-bind (x y)
@@ -164,8 +192,7 @@
   (move-cursor *standard-window* 
                (player-x *player*) 
                (player-y *player*))
-  (with-color red (paint #\@))
-    )
+  (with-color red (paint #\@)))
 
 (defun draw-hud ()
   (string-point (write-to-string *world-age*) 0 0 ))
@@ -196,6 +223,7 @@
     ;  (draw-map))
     (draw-hud)
     (draw-plants)
+    (draw-monsters)
     (draw-player)
     (refresh-window *standard-window*)
     (sleep .01)))
