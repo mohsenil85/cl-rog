@@ -114,11 +114,24 @@
   
   ))
 
-(defun cull-monsters ()
+(defun surrounding (num range)
+  (let ((mn (- num range))
+        (mx (+ num range)))
+    (loop :for i :from mn :to mx :collect i)))
+
+(defun contains (elm the-set)
+  (if (member elm the-set)
+    t
+    nil))
+
+
+(defun cull-monsters (p)
         (loop :for m
               :in *monsters*
               :do
-              (setf *monsters* (delete-if #'monster-standing-on-plant *monsters*))) )
+              (if (contains (monster-x m) (surrounding (plant-x p) 5))
+                (if (contains (monster-y m) (surrounding (plant-y p) 5))
+                  (setf msg "monster standing on plant!")))))
 
 
 (defun update-monsters ()
@@ -224,6 +237,7 @@
   (loop :for p 
         :in *plants*
         :do
+        (cull-monsters p)
         (draw-plant p)))
 
 
@@ -292,5 +306,5 @@
           )
       (quit)) ))
 
-(main)
+;(main)
 
