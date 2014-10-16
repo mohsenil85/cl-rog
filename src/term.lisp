@@ -84,18 +84,32 @@
     (loop :for m
         :in *monsters*
         :do
+        (paint-at-point #\Space (monster-x m) (monster-y m))
+        (move-monster m)
         (with-color blue 
                     (paint-at-point #\m 
                                  (monster-x m)
                                  (monster-y m))))))
 
+(defmacro with-dimensions (&body body)
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+    `(,@body)))
+
 (defun update-monsters ()
   (if (eq (random 100) 3)
     (create-monster)))
 
-(defun move-monster ()
-  
-  )
+(defun move-monster (m)
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+   (let ((i (random 3)))
+    (case i
+      ((0) (1- (mod (incf (monster-x m)) width)))
+      ((1) (1- (mod (decf (monster-x m)) width)))
+      ((2) (1- (mod (incf (monster-y m)) height)))
+      ((3) (1- (mod (decf (monster-y m)) height)))
+      ))))
 
 (defun plant ()
   (multiple-value-bind (x y)
