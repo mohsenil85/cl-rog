@@ -82,6 +82,27 @@
          (y (random (1- height))))
      (push (make-monster  :x x :y y :age 0) *monsters*))))
 
+
+
+
+(defun move-monster (m)
+  (multiple-value-bind (width height)
+    (window-dimensions *standard-window*)
+   (let ((i (random 3)))
+    (case i
+      ((0)  (mod (incf (monster-x m)) (1- width)))
+      ((1)  (mod (decf (monster-x m)) (1- width)))
+      ((2)  (mod (incf (monster-y m)) (1- height)))
+      ((3)  (mod (decf (monster-y m)) (1- height)))
+      ))))
+
+
+(defun update-monsters ()
+  (if (and (> 4 (length *monsters*))
+       (eq (random 1000) 3))
+    (create-monster)))
+
+
 (defun draw-monsters ()
   (progn
     (update-monsters)
@@ -124,31 +145,22 @@
     t
     nil))
 
+;;*plants*
+;*monsters*
+;(push (make-plant :x 10 :y 10 :age 0) *plants* )
+;(push (make-monster :x 10 :y 10 :age 0) *monsters*)
+;
+;(loop for p in *plants* do 
+;      (cull-monsters p)
+;      )
 
 (defun cull-monsters (p)
         (loop :for m
               :in *monsters*
               :do
-              (if (contains (monster-x m) (surrounding (plant-x p) 5))
-                (if (contains (monster-y m) (surrounding (plant-y p) 5))
-                  (setf msg "monster standing on plant!")))))
-
-
-(defun update-monsters ()
-  (if (and (> 4 (length *monsters*))
-       (eq (random 100) 3))
-    (create-monster)))
-
-(defun move-monster (m)
-  (multiple-value-bind (width height)
-    (window-dimensions *standard-window*)
-   (let ((i (random 3)))
-    (case i
-      ((0)  (mod (incf (monster-x m)) (1- width)))
-      ((1)  (mod (decf (monster-x m)) (1- width)))
-      ((2)  (mod (incf (monster-y m)) (1- height)))
-      ((3)  (mod (decf (monster-y m)) (1- height)))
-      ))))
+              (if (contains (monster-x m) (surrounding (plant-x p) 20))
+                (if (contains (monster-y m) (surrounding (plant-y p) 20 ))
+                  (setf *monsters* (remove m *monsters*))))))
 
 (defun plant ()
   (multiple-value-bind (x y)
@@ -268,6 +280,12 @@
           (y (player-y *player*))) 
     (case c
       ((nil) nil)
+
+      ((#\K) (setf y (- 5 y) ))
+      ((#\J) (setf y (+ 5 y) ))
+      ((#\H) (setf x (- 10 x) ))
+      ((#\L) (setf x (+ 10 x) ))
+
       ((#\k) (decf y))
       ((#\j) (incf y))
       ((#\h) (decf x))
@@ -285,12 +303,12 @@
     (incf *world-age*  )
     ;(if (eq 0 (mod *world-age* 61)) 
     ;  (draw-map))
-    (draw-hud)
     (draw-monsters)
     (draw-plants)
     ;(cull-monsters ) 
     (draw-player)
-    (if (> 0 (length *monsters*)) (setf msg *monsters*))
+    (draw-hud)
+    ;(if (> 0 (length *monsters*)) (setf msg *monsters*))
     (refresh-window *standard-window*)
     (sleep .01)))
 
@@ -306,5 +324,5 @@
           )
       (quit)) ))
 
-;(main)
+(main)
 
